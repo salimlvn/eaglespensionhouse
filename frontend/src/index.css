@@ -79,3 +79,28 @@
   font-family: 'Poppins';
   src: url('/src/assets/fonts/Merriweather-Italic-VariableFont.woff2') format('woff2');
 }
+
+.feature-carousel-track {
+  display: flex;
+  width: max-content;
+  flex-wrap: nowrap;
+  animation: feature-carousel-scroll 28s linear infinite;
+}
+
+.feature-carousel-track:hover {
+  animation-play-state: paused;
+}
+
+.feature-carousel-card {
+  width: clamp(16rem, 24vw, 18rem);
+}
+
+@keyframes feature-carousel-scroll {
+  from {
+    transform: translateX(0);
+  }
+
+  to {
+    transform: translateX(-50%);
+  }
+}
