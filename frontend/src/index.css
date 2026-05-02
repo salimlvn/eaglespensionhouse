@@ -1,0 +1,81 @@
+@import "tailwindcss";
+@font-face {
+  font-family: 'Poppins';
+  src: url('/src/assets/fonts/Poppins-ThinItalic.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Poppins';
+  src: url('/src/assets/fonts/Poppins-Thin.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Poppins';
+  src: url('/src/assets/fonts/Poppins-SemiBoldItalic.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Poppins';
+  src: url('/src/assets/fonts/Poppins-SemiBold.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Poppins';
+  src: url('/src/assets/fonts/Poppins-Regular.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Poppins';
+  src: url('/src/assets/fonts/Poppins-MediumItalic.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Poppins';
+  src: url('/src/assets/fonts/Poppins-Medium.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Poppins';
+  src: url('/src/assets/fonts/Poppins-LightItalic.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Poppins';
+  src: url('/src/assets/fonts/Poppins-Light.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Poppins';
+  src: url('/src/assets/fonts/Poppins-Italic.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Poppins';
+  src: url('/src/assets/fonts/Poppins-ExtraLightItalic.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Poppins';
+  src: url('/src/assets/fonts/Poppins-ExtraLight.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Poppins';
+  src: url('/src/assets/fonts/Poppins-ExtraBoldItalic.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Poppins';
+  src: url('/src/assets/fonts/Poppins-ExtraBold.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Poppins';
+  src: url('/src/assets/fonts/Poppins-BoldItalic.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Poppins';
+  src: url('/src/assets/fonts/Poppins-Bold.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Poppins';
+  src: url('/src/assets/fonts/Poppins-BlackItalic.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Poppins';
+  src: url('/src/assets/fonts/Poppins-Black.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Poppins';
+  src: url('/src/assets/fonts/Merriweather-VariableFont.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Poppins';
+  src: url('/src/assets/fonts/Merriweather-Italic-VariableFont.woff2') format('woff2');
+}
