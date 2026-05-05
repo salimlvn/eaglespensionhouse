@@ -19,10 +19,10 @@ function Hero() {
 
           <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center">
             <a
-              href="#rooms"
+              href="#/signup"
               className="inline-flex w-full items-center justify-center rounded-full bg-[#163d73] px-7 py-3 text-sm font-semibold text-white transition hover:bg-[#0f3058] sm:w-auto"
             >
-              Reserve Now
+              Create Account
             </a>
             <a
               href="#rates"

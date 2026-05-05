@@ -16,7 +16,7 @@ export const rates = [
     lines: [
       'Daily Rate: PHP 550 per day (per head)',
       'Monthly Rate: PHP 4,999 per month (per head)',
-      'Please Call or Text 09989566044 for Inquiries',
+      'Call or Text 09989566044 for Inquiries',
     ],
   },
 ];

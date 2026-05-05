@@ -2,6 +2,7 @@ import Navbar from '../components/landing/Navbar';
 import Hero from '../components/landing/Hero';
 import Features from '../components/landing/Features';
 import Rooms from '../components/landing/Rooms';
+import Rates from '../components/landing/Rates';
 import Location from '../components/landing/Location';
 import Footer from '../components/landing/Footer';
 
@@ -12,6 +13,7 @@ const Home = () => {
       <Hero />
       <Features />
       <Rooms />
+      <Rates/>
       <Location />
       <Footer />
     </main>
