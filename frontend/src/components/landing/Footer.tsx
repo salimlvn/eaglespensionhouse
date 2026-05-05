@@ -1,7 +1,7 @@
-import facebookIcon from '../assets/icons/facebook.png';
-import phoneIcon from '../assets/icons/phone-call.png';
-import placeholderIcon from '../assets/icons/placeholder.png';
-import eagleslogo from '../assets/images/eaglesnest.jpg';
+import facebookIcon from '../../assets/icons/facebook.png';
+import phoneIcon from '../../assets/icons/phone-call.png';
+import placeholderIcon from '../../assets/icons/placeholder.png';
+import eagleslogo from '../../assets/images/eaglesnest.jpg';
 
 function Footer() {
   const currentYear = new Date().getFullYear();

@@ -9,13 +9,40 @@ import showerImage from '../assets/images/shower.jpg';
 import sinkImage from '../assets/images/sink.jpg';
 
 export const rooms = [
-  { name: 'Single Bed Room', image: bedoneImage },
-  { name: 'Twin Bed Room', image: bedtwoImage },
-  { name: 'Common Comfort Room', image: crImage },
-  { name: 'Grand Arcade Building', image: grandArcadeImage },
-  { name: 'Hallway View', image: hallwayImage },
-  { name: 'Upper Hallway', image: hallwayTwoImage },
-  { name: 'Lobby Area', image: lobbyImage },
-  { name: 'Shower Area', image: showerImage },
-  { name: 'Shared Sink Area', image: sinkImage },
-] as const;
+  {
+    image: bedoneImage,
+    title: 'Aircon Room',
+  },
+  {
+    image: bedtwoImage,
+    title: 'Non-aircon Room',
+  },
+  {
+    image: crImage,
+    title: 'Common Comfort Room',
+  },
+  {
+    image: grandArcadeImage,
+    title: 'Building Exterior',
+  },
+  {
+    image: hallwayImage,
+    title: 'Main Hallway',
+  },
+  {
+    image: hallwayTwoImage,
+    title: 'Rooms',
+  },
+  {
+    image: lobbyImage,
+    title: 'Lobby Lounge',
+  },
+  {
+    image: showerImage,
+    title: 'Shared Shower Area',
+  },
+  {
+    image: sinkImage,
+    title: 'Common Sink Area',
+  },
+];

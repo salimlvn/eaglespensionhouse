@@ -23,4 +23,4 @@ export const features = [
     title: '24/7 Building Security Guard',
     desc: 'Dedicated guard on duty at all hours to ensure a secure environment.',
   }
-]as const
+]

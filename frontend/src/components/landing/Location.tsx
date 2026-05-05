@@ -3,7 +3,6 @@ function Location() {
     <section className="py-15" id="location">
       <div className="mx-auto max-w-7xl px-6">
         <div className="text-center">
-          <p className="text-sm font-bold uppercase tracking-[0.24em] text-[#2a6bc7]">Easy To Find</p>
           <h2 className="font-heading mt-3 text-4xl font-semibold text-[#163d73] md:text-5xl">Location</h2>
           <p className="mx-auto mt-4 max-w-3xl text-base leading-8 text-slate-600 md:text-lg">
             Eagle's Pension House is located at the Grand Arcade Building, corner Plaridel Street and A.C. Cortes
