@@ -24,5 +24,4 @@ BEGIN
 END
 GO
 
--- `confirm password` belongs in the sign-up form for validation only.
--- It should be compared in the application layer and never stored in the database.
+SELECT * FROM dbo.users;
