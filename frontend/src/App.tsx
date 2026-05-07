@@ -3,13 +3,7 @@ import Home from './pages/Home';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
 import Dashboard from './pages/user/Dashboard';
-import {
-  clearStoredSession,
-  getStoredSession,
-  setStoredSession,
-  setSignupSuccessState,
-  type AuthSession,
-} from './data/auth';
+import { clearStoredSession, getStoredSession, setStoredSession, setSignupSuccessState, type AuthSession, } from './data/auth';
 
 const getCurrentRoute = () => {
   const hash = window.location.hash.replace(/^#/, '');
