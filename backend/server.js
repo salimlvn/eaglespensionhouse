@@ -13,6 +13,7 @@ const PORT = Number(process.env.PORT || 3001);
 const CORS_ORIGIN = process.env.CORS_ORIGIN || '*';
 const DATA_DIRECTORY = path.join(__dirname, 'data');
 const DATA_FILE = path.join(DATA_DIRECTORY, 'users.json');
+const ROOMS_DATA_FILE = path.join(DATA_DIRECTORY, 'rooms.json');
 const SCHEMA_FILE = path.join(__dirname, '..', 'database', 'schema.sql');
 const ENABLE_FILE_STORAGE_FALLBACK = String(process.env.ENABLE_FILE_STORAGE_FALLBACK || 'false').toLowerCase() === 'true';
 const USER_FIELD_LIMITS = Object.freeze({
@@ -20,6 +21,50 @@ const USER_FIELD_LIMITS = Object.freeze({
   email: 255,
   contactNumber: 30,
 });
+const ROOM_FIELD_LIMITS = Object.freeze({
+  roomNumber: 30,
+  roomType: 20,
+  status: 20,
+});
+const ROOM_TYPES = Object.freeze(['Aircon', 'Non-aircon']);
+const ROOM_STATUSES = Object.freeze(['Available', 'Maintenance']);
+const ROOM_NUMBER_OPTIONS = Object.freeze([
+  '101',
+  '102',
+  '103',
+  '104',
+  '105',
+  '106',
+  '107',
+  '108',
+  '109',
+  '110',
+  '111',
+  '112',
+  '113',
+  '114',
+  '115',
+  '201',
+  '202',
+  '203',
+  '204',
+  '205',
+  '206',
+  '207',
+  '208',
+  '209',
+  '210',
+  '211',
+  '212',
+  '213',
+  '214',
+  '215',
+]);
+const ROOM_NUMBER_OPTIONS_BY_TYPE = Object.freeze({
+  Aircon: Object.freeze(['201', '202', '203', '204', '205', '206', '207', '208', '209', '210', '211', '212', '213', '214', '215']),
+  'Non-aircon': Object.freeze(['101', '102', '103', '104', '105', '106', '107', '108', '109', '110', '111', '112', '113', '114', '115']),
+});
+const VALID_ROOM_NUMBER_OPTIONS = new Set(ROOM_NUMBER_OPTIONS);
 const STRONG_PASSWORD_MESSAGE =
   'Password must be at least 8 characters and include uppercase, lowercase, a number, and a special character.';
 
@@ -29,7 +74,7 @@ let schemaDefinitionPromise;
 app.use(express.json());
 app.use((req, res, next) => {
   res.setHeader('Access-Control-Allow-Origin', CORS_ORIGIN);
-  res.setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
+  res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
   if (req.method === 'OPTIONS') {
@@ -112,6 +157,123 @@ app.post('/api/auth/login', async (req, res) => {
       sessionToken: createSessionToken(),
       user: serializeUser(user),
     });
+  } catch (error) {
+    return handleApiError(error, res);
+  }
+});
+
+app.get('/api/rooms', async (_, res) => {
+  try {
+    const storage = await getStorage();
+    const rooms = await storage.listRooms();
+
+    return res.json({
+      message: 'Rooms loaded.',
+      rooms: rooms.map(serializeRoom),
+    });
+  } catch (error) {
+    return handleApiError(error, res);
+  }
+});
+
+app.get('/api/rooms/options', async (_, res) => {
+  try {
+    const storage = await getStorage();
+    const roomNumbers = (await storage.listRoomNumberOptions()).filter((roomNumber) =>
+      VALID_ROOM_NUMBER_OPTIONS.has(roomNumber),
+    );
+
+    return res.json({
+      message: 'Room number options loaded.',
+      roomNumbers,
+    });
+  } catch (error) {
+    return handleApiError(error, res);
+  }
+});
+
+app.post('/api/rooms', async (req, res) => {
+  try {
+    const payload = sanitizeRoomPayload(req.body);
+    validateRoomPayload(payload);
+
+    const storage = await getStorage();
+    const roomNumberOptions = await storage.listRoomNumberOptions();
+
+    if (!roomNumberOptions.includes(payload.roomNumber)) {
+      return res.status(400).json({ message: 'Please choose a room number from the list.' });
+    }
+
+    if (!ROOM_NUMBER_OPTIONS_BY_TYPE[payload.roomType].includes(payload.roomNumber)) {
+      return res.status(400).json({ message: `Please choose a ${payload.roomType} room number.` });
+    }
+
+    const duplicate = await storage.findRoomByNumber(payload.roomNumber);
+
+    if (duplicate) {
+      return res.status(409).json({ message: 'A room with that room number already exists.' });
+    }
+
+    const room = await storage.createRoom(payload);
+
+    return res.status(201).json({
+      message: 'Room added successfully.',
+      room: serializeRoom(room),
+    });
+  } catch (error) {
+    return handleApiError(error, res);
+  }
+});
+
+app.put('/api/rooms/:roomId', async (req, res) => {
+  try {
+    const roomId = parseRoomId(req.params.roomId);
+    const payload = sanitizeRoomPayload(req.body);
+    validateRoomPayload(payload);
+
+    const storage = await getStorage();
+    const roomNumberOptions = await storage.listRoomNumberOptions();
+
+    if (!roomNumberOptions.includes(payload.roomNumber)) {
+      return res.status(400).json({ message: 'Please choose a room number from the list.' });
+    }
+
+    if (!ROOM_NUMBER_OPTIONS_BY_TYPE[payload.roomType].includes(payload.roomNumber)) {
+      return res.status(400).json({ message: `Please choose a ${payload.roomType} room number.` });
+    }
+
+    const duplicate = await storage.findRoomByNumber(payload.roomNumber, roomId);
+
+    if (duplicate) {
+      return res.status(409).json({ message: 'A room with that room number already exists.' });
+    }
+
+    const room = await storage.updateRoom(roomId, payload);
+
+    if (!room) {
+      return res.status(404).json({ message: 'Room not found.' });
+    }
+
+    return res.json({
+      message: 'Room updated successfully.',
+      room: serializeRoom(room),
+    });
+  } catch (error) {
+    return handleApiError(error, res);
+  }
+});
+
+app.delete('/api/rooms/:roomId', async (req, res) => {
+  try {
+    const roomId = parseRoomId(req.params.roomId);
+    const storage = await getStorage();
+    const deleted = await storage.deleteRoom(roomId);
+
+    if (!deleted) {
+      return res.status(404).json({ message: 'Room not found.' });
+    }
+
+    return res.json({ message: 'Room deleted successfully.' });
   } catch (error) {
     return handleApiError(error, res);
   }
@@ -315,6 +477,111 @@ function createSqlStorage(pool, sqlModule) {
 
       return result.recordset[0];
     },
+    async listRooms() {
+      const result = await pool.request().query(`
+        SELECT
+          room_id,
+          room_number,
+          room_type,
+          status,
+          created_at,
+          updated_at
+        FROM dbo.Rooms
+        ORDER BY room_id DESC
+      `);
+
+      return result.recordset;
+    },
+    async listRoomNumberOptions() {
+      const result = await pool.request().query(`
+        SELECT room_number
+        FROM dbo.RoomNumberOptions
+        ORDER BY display_order, room_number
+      `);
+
+      return sortRoomNumbers(result.recordset.map((entry) => entry.room_number).filter((roomNumber) =>
+        VALID_ROOM_NUMBER_OPTIONS.has(roomNumber),
+      ));
+    },
+    async findRoomByNumber(roomNumber, excludedRoomId) {
+      const request = pool
+        .request()
+        .input('roomNumber', sqlModule.NVarChar(ROOM_FIELD_LIMITS.roomNumber), roomNumber);
+      const excludeClause = Number.isInteger(excludedRoomId) ? 'AND room_id <> @excludedRoomId' : '';
+
+      if (Number.isInteger(excludedRoomId)) {
+        request.input('excludedRoomId', sqlModule.Int, excludedRoomId);
+      }
+
+      const result = await request.query(`
+        SELECT TOP 1
+          room_id,
+          room_number,
+          room_type,
+          status,
+          created_at,
+          updated_at
+        FROM dbo.Rooms
+        WHERE room_number = @roomNumber
+        ${excludeClause}
+      `);
+
+      return result.recordset[0] || null;
+    },
+    async createRoom(room) {
+      const result = await pool
+        .request()
+        .input('roomNumber', sqlModule.NVarChar(ROOM_FIELD_LIMITS.roomNumber), room.roomNumber)
+        .input('roomType', sqlModule.NVarChar(ROOM_FIELD_LIMITS.roomType), room.roomType)
+        .input('status', sqlModule.NVarChar(ROOM_FIELD_LIMITS.status), room.status)
+        .query(`
+          INSERT INTO dbo.Rooms (room_number, room_type, status)
+          OUTPUT
+            inserted.room_id,
+            inserted.room_number,
+            inserted.room_type,
+            inserted.status,
+            inserted.created_at,
+            inserted.updated_at
+          VALUES (@roomNumber, @roomType, @status)
+        `);
+
+      return result.recordset[0];
+    },
+    async updateRoom(roomId, room) {
+      const result = await pool
+        .request()
+        .input('roomId', sqlModule.Int, roomId)
+        .input('roomNumber', sqlModule.NVarChar(ROOM_FIELD_LIMITS.roomNumber), room.roomNumber)
+        .input('roomType', sqlModule.NVarChar(ROOM_FIELD_LIMITS.roomType), room.roomType)
+        .input('status', sqlModule.NVarChar(ROOM_FIELD_LIMITS.status), room.status)
+        .query(`
+          UPDATE dbo.Rooms
+          SET
+            room_number = @roomNumber,
+            room_type = @roomType,
+            status = @status,
+            updated_at = SYSUTCDATETIME()
+          OUTPUT
+            inserted.room_id,
+            inserted.room_number,
+            inserted.room_type,
+            inserted.status,
+            inserted.created_at,
+            inserted.updated_at
+          WHERE room_id = @roomId
+        `);
+
+      return result.recordset[0] || null;
+    },
+    async deleteRoom(roomId) {
+      const result = await pool
+        .request()
+        .input('roomId', sqlModule.Int, roomId)
+        .query('DELETE FROM dbo.Rooms WHERE room_id = @roomId');
+
+      return result.rowsAffected[0] > 0;
+    },
   };
 }
 
@@ -349,6 +616,66 @@ function createFileStorage() {
 
       return record;
     },
+    async listRooms() {
+      const rooms = await readRoomsFromFile();
+      return rooms.sort((left, right) => right.room_id - left.room_id);
+    },
+    async listRoomNumberOptions() {
+      const rooms = await readRoomsFromFile();
+      return sortRoomNumbers(ROOM_NUMBER_OPTIONS.slice());
+    },
+    async findRoomByNumber(roomNumber, excludedRoomId) {
+      const rooms = await readRoomsFromFile();
+      return rooms.find((room) => room.room_number === roomNumber && room.room_id !== excludedRoomId) || null;
+    },
+    async createRoom(room) {
+      const rooms = await readRoomsFromFile();
+      const nextId = rooms.length === 0 ? 1 : Math.max(...rooms.map((entry) => entry.room_id)) + 1;
+      const timestamp = new Date().toISOString();
+      const record = {
+        room_id: nextId,
+        room_number: room.roomNumber,
+        room_type: room.roomType,
+        status: room.status,
+        created_at: timestamp,
+        updated_at: timestamp,
+      };
+
+      rooms.push(record);
+      await fs.writeFile(ROOMS_DATA_FILE, JSON.stringify(rooms, null, 2));
+
+      return record;
+    },
+    async updateRoom(roomId, room) {
+      const rooms = await readRoomsFromFile();
+      const roomIndex = rooms.findIndex((entry) => entry.room_id === roomId);
+
+      if (roomIndex === -1) {
+        return null;
+      }
+
+      rooms[roomIndex] = {
+        ...rooms[roomIndex],
+        room_number: room.roomNumber,
+        room_type: room.roomType,
+        status: room.status,
+        updated_at: new Date().toISOString(),
+      };
+
+      await fs.writeFile(ROOMS_DATA_FILE, JSON.stringify(rooms, null, 2));
+      return rooms[roomIndex];
+    },
+    async deleteRoom(roomId) {
+      const rooms = await readRoomsFromFile();
+      const nextRooms = rooms.filter((entry) => entry.room_id !== roomId);
+
+      if (nextRooms.length === rooms.length) {
+        return false;
+      }
+
+      await fs.writeFile(ROOMS_DATA_FILE, JSON.stringify(nextRooms, null, 2));
+      return true;
+    },
   };
 }
 
@@ -362,9 +689,31 @@ async function ensureDataFile() {
   }
 }
 
+async function ensureRoomsDataFile() {
+  await fs.mkdir(DATA_DIRECTORY, { recursive: true });
+
+  try {
+    await fs.access(ROOMS_DATA_FILE);
+  } catch {
+    await fs.writeFile(ROOMS_DATA_FILE, '[]');
+  }
+}
+
 async function readUsersFromFile() {
   await ensureDataFile();
   const raw = await fs.readFile(DATA_FILE, 'utf8');
+
+  try {
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+async function readRoomsFromFile() {
+  await ensureRoomsDataFile();
+  const raw = await fs.readFile(ROOMS_DATA_FILE, 'utf8');
 
   try {
     const parsed = JSON.parse(raw);
@@ -388,6 +737,14 @@ function sanitizeLoginPayload(payload = {}) {
   return {
     email: normalizeEmail(payload.email),
     password: String(payload.password || ''),
+  };
+}
+
+function sanitizeRoomPayload(payload = {}) {
+  return {
+    roomNumber: String(payload.roomNumber || '').trim(),
+    roomType: normalizeRoomChoice(payload.roomType, ROOM_TYPES),
+    status: normalizeRoomChoice(payload.status || 'Available', ROOM_STATUSES),
   };
 }
 
@@ -435,8 +792,64 @@ function validateLoginPayload(payload) {
   }
 }
 
+function validateRoomPayload(payload) {
+  if (!payload.roomNumber || !payload.roomType || !payload.status) {
+    throw createRequestError('Room number, type, and status are required.', 400);
+  }
+
+  if (payload.roomNumber.length > ROOM_FIELD_LIMITS.roomNumber) {
+    throw createRequestError(`Room number must be ${ROOM_FIELD_LIMITS.roomNumber} characters or fewer.`, 400);
+  }
+
+  if (!ROOM_TYPES.includes(payload.roomType)) {
+    throw createRequestError('Room type must be Aircon or Non-aircon.', 400);
+  }
+
+  if (!ROOM_STATUSES.includes(payload.status)) {
+    throw createRequestError('Room status is invalid.', 400);
+  }
+}
+
 function normalizeEmail(email) {
   return String(email || '').trim().toLowerCase();
+}
+
+function normalizeRoomChoice(value, allowedValues) {
+  const normalizedValue = String(value || '').trim().toLowerCase();
+  return allowedValues.find((allowedValue) => allowedValue.toLowerCase() === normalizedValue) || String(value || '').trim();
+}
+
+function parseRoomId(value) {
+  const roomId = Number(value);
+
+  if (!Number.isInteger(roomId) || roomId <= 0) {
+    throw createRequestError('Room id is invalid.', 400);
+  }
+
+  return roomId;
+}
+
+function sortRoomNumbers(roomNumbers) {
+  return roomNumbers.sort((left, right) => {
+    const leftNumber = Number(left);
+    const rightNumber = Number(right);
+    const leftIsNumeric = Number.isFinite(leftNumber);
+    const rightIsNumeric = Number.isFinite(rightNumber);
+
+    if (leftIsNumeric && rightIsNumeric) {
+      return leftNumber - rightNumber;
+    }
+
+    if (leftIsNumeric) {
+      return -1;
+    }
+
+    if (rightIsNumeric) {
+      return 1;
+    }
+
+    return String(left).localeCompare(String(right), undefined, { numeric: true });
+  });
 }
 
 function isValidEmail(email) {
@@ -485,6 +898,17 @@ function serializeUser(user) {
     isActive: Boolean(user.is_active),
     createdAt: user.created_at,
     updatedAt: user.updated_at,
+  };
+}
+
+function serializeRoom(room) {
+  return {
+    roomId: room.room_id,
+    roomNumber: room.room_number,
+    roomType: room.room_type,
+    status: room.status,
+    createdAt: room.created_at,
+    updatedAt: room.updated_at,
   };
 }
 

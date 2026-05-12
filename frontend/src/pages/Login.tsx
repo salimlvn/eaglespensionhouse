@@ -1,33 +1,22 @@
-import { useEffect, useState, type ChangeEvent, type FormEvent } from 'react';
+import { useState, type ChangeEvent, type FormEvent } from 'react';
 import AuthLayout from '../components/auth/AuthLayout';
 import { AUTH_FIELD_LIMITS, consumeSignupSuccessState, loginUser, type AuthSession } from '../data/auth';
+import { ADMIN_CREDENTIALS, loginAdmin, type AdminSession } from '../data/adminAuth';
 
 type LoginProps = {
   onAuthenticated: (session: AuthSession) => void;
+  onAdminAuthenticated?: (session: AdminSession) => void;
 };
 
-function Login({ onAuthenticated }: LoginProps) {
+function Login({ onAuthenticated, onAdminAuthenticated }: LoginProps) {
+  const [signupState] = useState(() => consumeSignupSuccessState());
   const [form, setForm] = useState({
-    email: '',
+    email: signupState?.email || '',
     password: '',
   });
   const [errorMessage, setErrorMessage] = useState('');
-  const [successMessage, setSuccessMessage] = useState('');
+  const [successMessage, setSuccessMessage] = useState(signupState?.message || '');
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  useEffect(() => {
-    const signupState = consumeSignupSuccessState();
-
-    if (!signupState) {
-      return;
-    }
-
-    setSuccessMessage(signupState.message);
-    setForm((current) => ({
-      ...current,
-      email: signupState.email,
-    }));
-  }, []);
 
   const handleChange = (event: ChangeEvent<HTMLInputElement>) => {
     const { name, value } = event.target;
@@ -51,6 +40,12 @@ function Login({ onAuthenticated }: LoginProps) {
     }
 
     try {
+      if (form.email.trim().toLowerCase() === ADMIN_CREDENTIALS.email) {
+        const adminSession = loginAdmin(form);
+        onAdminAuthenticated?.(adminSession);
+        return;
+      }
+
       const session = await loginUser(form);
       onAuthenticated(session);
     } catch (error) {
