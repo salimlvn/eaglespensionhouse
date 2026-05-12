@@ -181,3 +181,4 @@ GO
 SELECT * FROM dbo.users;
 SELECT * FROM dbo.RoomNumberOptions;
 SELECT * FROM dbo.Rooms WHERE status = 'Available';
+SELECT * FROM dbo.Rooms WHERE status = 'Maintenance';

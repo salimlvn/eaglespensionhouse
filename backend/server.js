@@ -60,11 +60,6 @@ const ROOM_NUMBER_OPTIONS = Object.freeze([
   '214',
   '215',
 ]);
-const ROOM_NUMBER_OPTIONS_BY_TYPE = Object.freeze({
-  Aircon: Object.freeze(['201', '202', '203', '204', '205', '206', '207', '208', '209', '210', '211', '212', '213', '214', '215']),
-  'Non-aircon': Object.freeze(['101', '102', '103', '104', '105', '106', '107', '108', '109', '110', '111', '112', '113', '114', '115']),
-});
-const VALID_ROOM_NUMBER_OPTIONS = new Set(ROOM_NUMBER_OPTIONS);
 const STRONG_PASSWORD_MESSAGE =
   'Password must be at least 8 characters and include uppercase, lowercase, a number, and a special character.';
 
@@ -179,9 +174,7 @@ app.get('/api/rooms', async (_, res) => {
 app.get('/api/rooms/options', async (_, res) => {
   try {
     const storage = await getStorage();
-    const roomNumbers = (await storage.listRoomNumberOptions()).filter((roomNumber) =>
-      VALID_ROOM_NUMBER_OPTIONS.has(roomNumber),
-    );
+    const roomNumbers = await storage.listRoomNumberOptions();
 
     return res.json({
       message: 'Room number options loaded.',
@@ -202,10 +195,6 @@ app.post('/api/rooms', async (req, res) => {
 
     if (!roomNumberOptions.includes(payload.roomNumber)) {
       return res.status(400).json({ message: 'Please choose a room number from the list.' });
-    }
-
-    if (!ROOM_NUMBER_OPTIONS_BY_TYPE[payload.roomType].includes(payload.roomNumber)) {
-      return res.status(400).json({ message: `Please choose a ${payload.roomType} room number.` });
     }
 
     const duplicate = await storage.findRoomByNumber(payload.roomNumber);
@@ -236,10 +225,6 @@ app.put('/api/rooms/:roomId', async (req, res) => {
 
     if (!roomNumberOptions.includes(payload.roomNumber)) {
       return res.status(400).json({ message: 'Please choose a room number from the list.' });
-    }
-
-    if (!ROOM_NUMBER_OPTIONS_BY_TYPE[payload.roomType].includes(payload.roomNumber)) {
-      return res.status(400).json({ message: `Please choose a ${payload.roomType} room number.` });
     }
 
     const duplicate = await storage.findRoomByNumber(payload.roomNumber, roomId);
@@ -499,9 +484,7 @@ function createSqlStorage(pool, sqlModule) {
         ORDER BY display_order, room_number
       `);
 
-      return sortRoomNumbers(result.recordset.map((entry) => entry.room_number).filter((roomNumber) =>
-        VALID_ROOM_NUMBER_OPTIONS.has(roomNumber),
-      ));
+      return sortRoomNumbers(result.recordset.map((entry) => entry.room_number));
     },
     async findRoomByNumber(roomNumber, excludedRoomId) {
       const request = pool
@@ -622,7 +605,7 @@ function createFileStorage() {
     },
     async listRoomNumberOptions() {
       const rooms = await readRoomsFromFile();
-      return sortRoomNumbers(ROOM_NUMBER_OPTIONS.slice());
+      return sortRoomNumbers(Array.from(new Set([...ROOM_NUMBER_OPTIONS, ...rooms.map((room) => room.room_number)])));
     },
     async findRoomByNumber(roomNumber, excludedRoomId) {
       const rooms = await readRoomsFromFile();
