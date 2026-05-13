@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import { rooms } from '../../data/rooms';
 
+// Gallery section for rooms and shared spaces.
 function Rooms() {
+  // Track the selected room so hover, focus, and click all show the same active state.
   const [activeRoomTitle, setActiveRoomTitle] = useState(rooms[0]?.title ?? '');
   const activeRoom = rooms.find((room) => room.title === activeRoomTitle) ?? rooms[0];
 

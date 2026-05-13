@@ -1,13 +1,16 @@
 import { features } from '../../data/features';
 
+// Duplicate the list so the CSS animation can loop without a blank gap.
 const carouselItems = [...features, ...features];
 
+// Horizontally scrolling feature list for property highlights.
 function Features() {
   return (
     <section className="bg-white py-15">
       <div className="w-full overflow-hidden border-y border-[#ddeafb] bg-white shadow-[0_18px_45px_rgba(23,61,115,0.08)]">
         <div className="feature-carousel-track" role="list" aria-label="Property features">
           {carouselItems.map((feature, index) => (
+            /* Hide duplicated cards from screen readers. */
             <article
               key={`${feature.title}-${index}`}
               aria-hidden={index >= features.length}

@@ -8,6 +8,7 @@ import lobbyImage from '../assets/images/lobby.jpg';
 import showerImage from '../assets/images/shower.jpg';
 import sinkImage from '../assets/images/sink.jpg';
 
+// Gallery images and labels shown on the homepage and guest dashboard.
 export const rooms = [
   {
     image: bedoneImage,

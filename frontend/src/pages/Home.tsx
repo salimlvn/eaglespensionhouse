@@ -6,6 +6,7 @@ import Rates from '../components/landing/Rates';
 import Location from '../components/landing/Location';
 import Footer from '../components/landing/Footer';
 
+// Public landing page assembled from the reusable landing sections.
 const Home = () => {
   return (
     <main className="overflow-x-hidden bg-[linear-gradient(180deg,#f8fbff_0%,#edf6ff_52%,#f8fbff_100%)]">

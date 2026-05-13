@@ -1,3 +1,4 @@
+// Admin session shape used by the temporary local admin login.
 export type AdminSession = {
   role: 'admin';
   name: string;
@@ -10,13 +11,16 @@ type AdminLoginPayload = {
   password: string;
 };
 
+// Store admin login separately from guest login.
 const ADMIN_STORAGE_KEY = 'eagles-pension-house-admin-session';
 
+// Temporary static admin credentials until staff/admin management is added.
 export const ADMIN_CREDENTIALS = {
   email: 'admin@eaglespensionhouse.com',
   password: 'Admin@123',
 } as const;
 
+// Validate the static admin credentials and create a lightweight admin session.
 export function loginAdmin(payload: AdminLoginPayload): AdminSession {
   const email = payload.email.trim().toLowerCase();
 
@@ -32,6 +36,7 @@ export function loginAdmin(payload: AdminLoginPayload): AdminSession {
   };
 }
 
+// Restore an admin session from localStorage.
 export function getStoredAdminSession() {
   try {
     const raw = window.localStorage.getItem(ADMIN_STORAGE_KEY);
@@ -46,10 +51,12 @@ export function getStoredAdminSession() {
   }
 }
 
+// Persist the current admin session.
 export function setStoredAdminSession(session: AdminSession) {
   window.localStorage.setItem(ADMIN_STORAGE_KEY, JSON.stringify(session));
 }
 
+// Remove the admin session during logout.
 export function clearStoredAdminSession() {
   window.localStorage.removeItem(ADMIN_STORAGE_KEY);
 }

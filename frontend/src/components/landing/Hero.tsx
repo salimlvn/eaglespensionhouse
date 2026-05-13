@@ -1,3 +1,4 @@
+// Main marketing section for the public homepage.
 function Hero() {
   return (
     <section className="overflow-hidden bg-[linear-gradient(135deg,#eaf4ff_0%,#d8ebff_45%,#f8fbff_100%)]">
@@ -17,6 +18,7 @@ function Hero() {
             for students, travelers, and working individuals.
           </p>
 
+          {/* Primary actions send visitors toward account creation or rates. */}
           <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center">
             <a
               href="#/signup"

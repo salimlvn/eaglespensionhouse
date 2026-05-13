@@ -1,3 +1,4 @@
+// Homepage feature cards shown in the scrolling feature section.
 export const features = [
   {
     title: 'Flood Free',

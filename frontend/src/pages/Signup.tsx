@@ -6,7 +6,9 @@ type SignupProps = {
   onSignupSuccess: (email: string) => void;
 };
 
+// Signup page for new guest accounts.
 function Signup({ onSignupSuccess }: SignupProps) {
+  // Store all signup inputs together because they are submitted as one payload.
   const [form, setForm] = useState({
     fullName: '',
     email: '',
@@ -17,6 +19,7 @@ function Signup({ onSignupSuccess }: SignupProps) {
   const [errorMessage, setErrorMessage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Update the matching form field based on the input name.
   const handleChange = (event: ChangeEvent<HTMLInputElement>) => {
     const { name, value } = event.target;
     setForm((current) => ({
@@ -25,6 +28,7 @@ function Signup({ onSignupSuccess }: SignupProps) {
     }));
   };
 
+  // Validate client-side first, then send the signup request to the backend.
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
@@ -76,6 +80,7 @@ function Signup({ onSignupSuccess }: SignupProps) {
       switchHref="#/login"
     >
       <form className="space-y-4" onSubmit={handleSubmit}>
+        {/* Display the first validation or backend error above the fields. */}
         {errorMessage ? (
           <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
             {errorMessage}

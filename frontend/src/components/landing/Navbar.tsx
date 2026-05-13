@@ -1,5 +1,6 @@
 import logoImage from '../../assets/images/eaglesnest.jpg';
 
+// Sticky public navigation for brand, login, and signup links.
 function Navbar() {
   return (
     <header className="sticky top-0 z-50 border-b border-white/10 bg-[linear-gradient(90deg,#0b3565,#0a2c54)] text-white shadow-md">

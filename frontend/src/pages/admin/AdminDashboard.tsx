@@ -21,7 +21,7 @@ type AdminDashboardProps = {
   onLogout: () => void;
 };
 
-type AdminPanel = 'dashboard' | 'add-room' | 'room-inventory';
+type AdminPanel = 'add-room' | 'room-inventory';
 
 type MenuGroup = {
   title: string;
@@ -38,14 +38,15 @@ type RoomFormState = {
   status: RoomStatus;
 };
 
+// Default values used when opening or resetting the room form.
 const emptyRoomForm: RoomFormState = {
   roomNumber: '',
   roomType: 'Aircon',
   status: 'Available',
 };
 
+// Sidebar navigation is kept data-driven so hidden sections can be restored later.
 const menuGroups: MenuGroup[] = [
-  { title: 'Dashboard', panel: 'dashboard', items: [] },
   {
     title: 'Rooms',
     items: [
@@ -53,41 +54,27 @@ const menuGroups: MenuGroup[] = [
       { label: 'Room Inventory', panel: 'room-inventory' },
     ],
   },
-  {
-    title: 'Reports',
-    items: [
-      { label: 'Revenue Report', panel: 'dashboard' },
-      { label: 'Booking Summary', panel: 'dashboard' },
-      { label: 'Room Occupancy', panel: 'dashboard' },
-    ],
-  },
-  {
-    title: 'Staff Tools',
-    items: [
-      { label: 'Register Staff', panel: 'dashboard' },
-      { label: 'Account Credentials', panel: 'dashboard' },
-      { label: 'Staff Accounts', panel: 'dashboard' },
-    ],
-  },
 ];
 
-const statusColors: Record<RoomStatus, string> = {
-  Available: 'bg-emerald-500',
-  Maintenance: 'bg-red-500',
-};
-
+// Admin room management screen.
 function AdminDashboard({ session, onLogout }: AdminDashboardProps) {
-  const [activePanel, setActivePanel] = useState<AdminPanel>('dashboard');
+  // Track which admin panel is visible.
+  const [activePanel, setActivePanel] = useState<AdminPanel>('room-inventory');
   const [openGroups, setOpenGroups] = useState(() => new Set(['Rooms']));
+
+  // Room records and form state.
   const [rooms, setRooms] = useState<AdminRoom[]>([]);
   const [roomNumberOptions, setRoomNumberOptions] = useState<string[]>([]);
   const [roomForm, setRoomForm] = useState<RoomFormState>(emptyRoomForm);
   const [editingRoomId, setEditingRoomId] = useState<number | null>(null);
+
+  // UI status messages for loading, saving, and request errors.
   const [isLoadingRooms, setIsLoadingRooms] = useState(true);
   const [isSavingRoom, setIsSavingRoom] = useState(false);
   const [roomError, setRoomError] = useState('');
   const [roomMessage, setRoomMessage] = useState('');
 
+  // Load room records and allowed room numbers together on first render.
   useEffect(() => {
     let isMounted = true;
 
@@ -120,22 +107,14 @@ function AdminDashboard({ session, onLogout }: AdminDashboardProps) {
     };
   }, []);
 
+  // Display the current date in the admin header.
   const updatedDate = new Intl.DateTimeFormat('en-US', {
     month: 'short',
     day: '2-digit',
     year: 'numeric',
   }).format(new Date());
 
-  const roomCounts = useMemo(() => {
-    return ROOM_STATUSES.reduce(
-      (counts, status) => ({
-        ...counts,
-        [status]: rooms.filter((room) => room.status === status).length,
-      }),
-      {} as Record<RoomStatus, number>,
-    );
-  }, [rooms]);
-
+  // Only show room numbers that match the selected type and are not already used.
   const availableRoomNumbers = useMemo(() => {
     const validRoomNumbers = new Set(ROOM_NUMBER_OPTIONS_BY_TYPE[roomForm.roomType]);
     const usedRoomNumbers = new Set(rooms.map((room) => room.roomNumber));
@@ -148,6 +127,7 @@ function AdminDashboard({ session, onLogout }: AdminDashboardProps) {
     });
   }, [editingRoomId, roomForm.roomType, roomNumberOptions, rooms]);
 
+  // Clear the selected number if the admin switches to a room type where it is invalid.
   useEffect(() => {
     if (!roomForm.roomNumber) {
       return;
@@ -158,24 +138,7 @@ function AdminDashboard({ session, onLogout }: AdminDashboardProps) {
     }
   }, [roomForm.roomNumber, roomForm.roomType]);
 
-  const summaryCards = [
-    {
-      label: 'Available Rooms',
-      value: String(roomCounts.Available || 0),
-      helper: `${roomNumberOptions.length} room numbers from SQL`,
-      icon: 'ROOM',
-    },
-    { label: "Today's Check-ins", value: '0', helper: '0 upcoming arrivals', icon: 'IN' },
-    { label: 'Total Guests', value: '0', helper: 'Checked in right now', icon: 'GUEST' },
-    { label: 'Revenue', value: 'PHP 0', helper: 'Total from approved reservations', icon: 'PHP' },
-  ];
-
-  const roomStatuses = ROOM_STATUSES.map((status) => ({
-    label: status,
-    value: String(roomCounts[status] || 0),
-    color: statusColors[status],
-  }));
-
+  // Open or close sidebar groups, or activate a direct panel link.
   const handleGroupToggle = (group: MenuGroup) => {
     if (group.panel) {
       setActivePanel(group.panel);
@@ -195,6 +158,7 @@ function AdminDashboard({ session, onLogout }: AdminDashboardProps) {
     });
   };
 
+  // Create or update a room, then sync the local table without a full reload.
   const handleRoomSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setIsSavingRoom(true);
@@ -227,6 +191,7 @@ function AdminDashboard({ session, onLogout }: AdminDashboardProps) {
     }
   };
 
+  // Move an existing room into the form for editing.
   const handleEditRoom = (room: AdminRoom) => {
     setRoomForm({
       roomNumber: room.roomNumber,
@@ -239,6 +204,7 @@ function AdminDashboard({ session, onLogout }: AdminDashboardProps) {
     setRoomMessage('');
   };
 
+  // Confirm and remove a room from the backend and local state.
   const handleDeleteRoom = async (room: AdminRoom) => {
     const confirmed = window.confirm(`Delete room ${room.roomNumber}?`);
 
@@ -264,6 +230,7 @@ function AdminDashboard({ session, onLogout }: AdminDashboardProps) {
     }
   };
 
+  // Return the form to its blank create-room state.
   const resetRoomForm = () => {
     setRoomForm(emptyRoomForm);
     setEditingRoomId(null);
@@ -274,9 +241,10 @@ function AdminDashboard({ session, onLogout }: AdminDashboardProps) {
   return (
     <main className="min-h-screen bg-[#eef4f8] text-[#082f57]">
       <div className="flex min-h-screen">
+        {/* Desktop sidebar navigation. */}
         <aside className="fixed inset-y-0 left-0 hidden w-[340px] flex-col bg-[#123754] text-white lg:flex">
           <div className="px-8 py-8">
-            <a href="#/admin/dashboard" className="flex items-center gap-3" onClick={() => setActivePanel('dashboard')}>
+            <a href="#/admin/dashboard" className="flex items-center gap-3" onClick={() => setActivePanel('room-inventory')}>
               <img
                 src={logoImage}
                 alt="Eagle's Pension House logo"
@@ -304,7 +272,7 @@ function AdminDashboard({ session, onLogout }: AdminDashboardProps) {
                       className={`group flex min-h-14 w-full items-center justify-between rounded-lg border px-5 py-4 text-left text-base font-semibold transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50 ${
                         isGroupActive
                           ? 'border-white/10 bg-white/15 text-white shadow-[0_12px_30px_rgba(0,0,0,0.12)]'
-                          : 'border-transparent text-blue-50 hover:border-white/10 hover:bg-white/10 hover:text-white'
+                          : 'border-transparent text-blue-50'
                       }`}
                       aria-expanded={group.items.length ? isOpen : undefined}
                     >
@@ -314,7 +282,7 @@ function AdminDashboard({ session, onLogout }: AdminDashboardProps) {
                           className={`grid h-7 w-7 place-items-center rounded-md border text-lg leading-none transition ${
                             isOpen
                               ? 'border-white/15 bg-white/15'
-                              : 'border-white/10 bg-white/5 group-hover:bg-white/15'
+                              : 'border-white/10 bg-white/5'
                           }`}
                         >
                           {isOpen ? '-' : '+'}
@@ -332,7 +300,7 @@ function AdminDashboard({ session, onLogout }: AdminDashboardProps) {
                             className={`block min-h-12 w-full rounded-lg border px-5 py-3 text-left text-sm font-semibold transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50 ${
                               activePanel === item.panel
                                 ? 'border-white/10 bg-white/15 text-white shadow-[0_10px_24px_rgba(0,0,0,0.1)]'
-                                : 'border-transparent text-blue-100 hover:border-white/10 hover:bg-white/10 hover:text-white'
+                                : 'border-transparent text-blue-100'
                             }`}
                           >
                             <span className="block pl-4">{item.label}</span>
@@ -350,7 +318,7 @@ function AdminDashboard({ session, onLogout }: AdminDashboardProps) {
             <button
               type="button"
               onClick={onLogout}
-              className="w-full rounded-lg border border-white/20 px-5 py-3 text-sm font-semibold text-white transition hover:bg-white/10"
+              className="w-full rounded-lg border border-white/20 px-5 py-3 text-sm font-semibold text-white transition"
             >
               Log out
             </button>
@@ -358,9 +326,10 @@ function AdminDashboard({ session, onLogout }: AdminDashboardProps) {
         </aside>
 
         <section className="min-w-0 flex-1 lg:pl-[340px]">
+          {/* Compact mobile header and panel switcher. */}
           <header className="sticky top-0 z-20 border-b border-slate-200/80 bg-white/90 px-4 py-4 backdrop-blur lg:hidden">
             <div className="flex items-center justify-between gap-3">
-              <button type="button" onClick={() => setActivePanel('dashboard')} className="flex min-w-0 items-center gap-3">
+              <button type="button" onClick={() => setActivePanel('room-inventory')} className="flex min-w-0 items-center gap-3">
                 <img
                   src={logoImage}
                   alt="Eagle's Pension House logo"
@@ -369,7 +338,7 @@ function AdminDashboard({ session, onLogout }: AdminDashboardProps) {
                 <span className="min-w-0 text-left">
                   <span className="block truncate text-lg font-bold text-[#123754]">Eagle&apos;s Pension</span>
                   <span className="block truncate text-xs uppercase tracking-[0.18em] text-slate-500">
-                    Admin Dashboard
+                    Admin Control Center
                   </span>
                 </span>
               </button>
@@ -381,9 +350,8 @@ function AdminDashboard({ session, onLogout }: AdminDashboardProps) {
                 Log out
               </button>
             </div>
-            <div className="mt-4 grid grid-cols-3 gap-2">
+            <div className="mt-4 grid grid-cols-2 gap-2">
               {[
-                { label: 'Dashboard', panel: 'dashboard' as const },
                 { label: 'Add Room', panel: 'add-room' as const },
                 { label: 'Inventory', panel: 'room-inventory' as const },
               ].map((item) => (
@@ -394,7 +362,7 @@ function AdminDashboard({ session, onLogout }: AdminDashboardProps) {
                   className={`rounded-lg px-3 py-2 text-xs font-bold transition ${
                     activePanel === item.panel
                       ? 'bg-[#123754] text-white'
-                      : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                      : 'bg-slate-100 text-slate-700'
                   }`}
                 >
                   {item.label}
@@ -404,15 +372,16 @@ function AdminDashboard({ session, onLogout }: AdminDashboardProps) {
           </header>
 
           <div className="mx-auto max-w-[1520px] px-4 py-6 sm:px-6 lg:px-12 lg:py-10">
+            {/* Main page heading and last-updated date. */}
             <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
               <div>
                 <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[#6d86a8]">
                   Signed in as {session.name}
                 </p>
                 <h1 className="mt-2 text-4xl font-bold leading-tight text-[#082f57] sm:text-5xl">
-                  {activePanel === 'dashboard' ? 'Dashboard' : activePanel === 'add-room' ? 'Add Room' : 'Room Inventory'}
+                  {activePanel === 'add-room' ? 'Add Room' : 'Room Inventory'}
                 </h1>
-                <p className="mt-3 text-base text-[#6d86a8]">Overview of your pension house operations</p>
+                <p className="mt-3 text-base text-[#6d86a8]">Manage room setup and availability</p>
               </div>
 
               <div className="rounded-lg border border-slate-200 bg-white px-8 py-5 text-right shadow-[0_18px_50px_rgba(8,47,87,0.08)]">
@@ -421,65 +390,7 @@ function AdminDashboard({ session, onLogout }: AdminDashboardProps) {
               </div>
             </div>
 
-            {activePanel === 'dashboard' ? (
-              <>
-                <section className="mt-8 grid gap-4 md:grid-cols-2 2xl:grid-cols-4">
-                  {summaryCards.map((card) => (
-                    <article
-                      key={card.label}
-                      className="rounded-lg border border-[#d7e2ee] bg-white p-6 shadow-[0_18px_50px_rgba(8,47,87,0.07)]"
-                    >
-                      <div className="flex items-start justify-between gap-4">
-                        <div>
-                          <p className="text-sm font-bold uppercase tracking-[0.08em] text-[#6d86a8]">{card.label}</p>
-                          <p className="mt-3 text-4xl font-bold text-[#082f57]">{card.value}</p>
-                        </div>
-                        <div className="grid h-14 w-14 place-items-center rounded-lg border border-[#d7e2ee] bg-[#f1f6fc] text-[10px] font-bold text-[#456997]">
-                          {card.icon}
-                        </div>
-                      </div>
-                      <p className="mt-3 text-sm text-[#7791b2]">{card.helper}</p>
-                    </article>
-                  ))}
-                </section>
-
-                <section className="mt-5 grid gap-5 xl:grid-cols-[1fr_0.45fr]">
-                  <article className="rounded-lg border border-[#d7e2ee] bg-white p-6 shadow-[0_18px_50px_rgba(8,47,87,0.07)]">
-                    <h2 className="text-2xl font-semibold text-[#082f57]">Reservation Activity</h2>
-                    <div className="mt-6 grid gap-4 md:grid-cols-2">
-                      {[
-                        { label: 'Pending Approvals', value: '0', helper: 'Reservations waiting for action' },
-                        { label: 'Upcoming Arrivals', value: '0', helper: 'Approved stays scheduled after today' },
-                        { label: 'Check-outs Today', value: '0', helper: 'Guests due to leave today' },
-                        { label: 'Staff Accounts', value: '0', helper: 'Active staff logins in the system' },
-                      ].map((card) => (
-                        <div key={card.label} className="rounded-lg border border-[#d7e2ee] bg-[#f8fbff] p-5">
-                          <p className="text-sm font-bold uppercase tracking-[0.08em] text-[#6d86a8]">{card.label}</p>
-                          <p className="mt-3 text-3xl font-bold text-[#082f57]">{card.value}</p>
-                          <p className="mt-2 text-sm text-[#7791b2]">{card.helper}</p>
-                        </div>
-                      ))}
-                    </div>
-                  </article>
-
-                  <article className="rounded-lg border border-[#d7e2ee] bg-white p-6 shadow-[0_18px_50px_rgba(8,47,87,0.07)]">
-                    <h2 className="text-2xl font-semibold text-[#082f57]">Room Status</h2>
-                    <div className="mt-7 space-y-7">
-                      {roomStatuses.map((status) => (
-                        <div key={status.label} className="flex items-center justify-between gap-4">
-                          <div className="flex items-center gap-3">
-                            <span className={`h-3 w-3 rounded-full ${status.color}`} />
-                            <span className="font-semibold text-[#1b426c]">{status.label}</span>
-                          </div>
-                          <span className="font-bold text-[#082f57]">{status.value}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </article>
-                </section>
-              </>
-            ) : null}
-
+            {/* Add/edit room form panel. */}
             {activePanel === 'add-room' ? (
               <section className="mt-8 w-full">
                 <article className="rounded-lg border border-[#d7e2ee] bg-white p-6 shadow-[0_18px_50px_rgba(8,47,87,0.07)] sm:p-8">
@@ -491,7 +402,7 @@ function AdminDashboard({ session, onLogout }: AdminDashboardProps) {
                       <button
                         type="button"
                         onClick={resetRoomForm}
-                        className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+                        className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 transition"
                       >
                         Cancel
                       </button>
@@ -566,7 +477,7 @@ function AdminDashboard({ session, onLogout }: AdminDashboardProps) {
                     <button
                       type="submit"
                       disabled={isSavingRoom || isLoadingRooms || availableRoomNumbers.length === 0}
-                      className="w-full rounded-lg bg-[#123754] px-5 py-3 text-sm font-bold text-white transition hover:bg-[#0d2a41] focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-[#bfd8fb] disabled:cursor-not-allowed disabled:opacity-70"
+                      className="w-full rounded-lg bg-[#123754] px-5 py-3 text-sm font-bold text-white transition focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-[#bfd8fb] disabled:cursor-not-allowed disabled:opacity-70"
                     >
                       {isSavingRoom ? 'Saving...' : editingRoomId ? 'Update Room' : 'Add Room'}
                     </button>
@@ -575,6 +486,7 @@ function AdminDashboard({ session, onLogout }: AdminDashboardProps) {
               </section>
             ) : null}
 
+            {/* Room inventory table panel. */}
             {activePanel === 'room-inventory' ? (
               <section className="mt-8">
                 {roomError ? <p className="mb-4 rounded-lg bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">{roomError}</p> : null}
@@ -601,6 +513,7 @@ type RoomInventoryTableProps = {
   onDeleteRoom: (room: AdminRoom) => void;
 };
 
+// Table for room inventory, loading state, empty state, and row actions.
 function RoomInventoryTable({ rooms, isLoading, onEditRoom, onDeleteRoom }: RoomInventoryTableProps) {
   return (
     <article className="rounded-lg border border-[#d7e2ee] bg-white p-6 shadow-[0_18px_50px_rgba(8,47,87,0.07)]">
@@ -653,14 +566,14 @@ function RoomInventoryTable({ rooms, isLoading, onEditRoom, onDeleteRoom }: Room
                         <button
                           type="button"
                           onClick={() => onEditRoom(room)}
-                          className="rounded-lg border border-slate-300 px-3 py-2 text-xs font-bold text-slate-700 transition hover:bg-slate-50"
+                          className="rounded-lg border border-slate-300 px-3 py-2 text-xs font-bold text-slate-700 transition"
                         >
                           Edit
                         </button>
                         <button
                           type="button"
                           onClick={() => onDeleteRoom(room)}
-                          className="rounded-lg border border-red-200 px-3 py-2 text-xs font-bold text-red-700 transition hover:bg-red-50"
+                          className="rounded-lg border border-red-200 px-3 py-2 text-xs font-bold text-red-700 transition"
                         >
                           Delete
                         </button>

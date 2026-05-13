@@ -8,7 +8,9 @@ type LoginProps = {
   onAdminAuthenticated?: (session: AdminSession) => void;
 };
 
+// Login page for both guest users and the temporary static admin account.
 function Login({ onAuthenticated, onAdminAuthenticated }: LoginProps) {
+  // Pull the signup flash message once when the page first loads.
   const [signupState] = useState(() => consumeSignupSuccessState());
   const [form, setForm] = useState({
     email: signupState?.email || '',
@@ -18,6 +20,7 @@ function Login({ onAuthenticated, onAdminAuthenticated }: LoginProps) {
   const [successMessage, setSuccessMessage] = useState(signupState?.message || '');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Keep the form state in sync with input changes.
   const handleChange = (event: ChangeEvent<HTMLInputElement>) => {
     const { name, value } = event.target;
     setForm((current) => ({
@@ -26,6 +29,7 @@ function Login({ onAuthenticated, onAdminAuthenticated }: LoginProps) {
     }));
   };
 
+  // Validate, detect admin login, then authenticate against the correct source.
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
@@ -40,6 +44,7 @@ function Login({ onAuthenticated, onAdminAuthenticated }: LoginProps) {
     }
 
     try {
+      // Admin login is currently local while the full staff/admin module is paused.
       if (form.email.trim().toLowerCase() === ADMIN_CREDENTIALS.email) {
         const adminSession = loginAdmin(form);
         onAdminAuthenticated?.(adminSession);
@@ -64,12 +69,14 @@ function Login({ onAuthenticated, onAdminAuthenticated }: LoginProps) {
       switchHref="#/signup"
     >
       <form className="space-y-4" onSubmit={handleSubmit}>
+        {/* Show the one-time signup success message above the login form. */}
         {successMessage ? (
           <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
             {successMessage}
           </div>
         ) : null}
 
+        {/* Show validation and API errors in the same spot. */}
         {errorMessage ? (
           <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
             {errorMessage}

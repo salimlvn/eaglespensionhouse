@@ -1,5 +1,6 @@
 @import "tailwindcss";
 
+/* Load the Poppins font family used by most interface text. */
 @font-face {
   font-family: 'Poppins';
   src: url('./assets/fonts/Poppins-Regular.woff2') format('woff2');
@@ -40,6 +41,7 @@
   font-display: swap;
 }
 
+/* Load the Merriweather font family used for headings. */
 @font-face {
   font-family: 'Merriweather';
   src: url('./assets/fonts/Merriweather-VariableFont_opsz,wdth,wght.woff2') format('woff2');
@@ -56,6 +58,7 @@
   font-display: swap;
 }
 
+/* Set the default app font. */
 :root {
   font-family: 'Poppins', sans-serif;
 }
@@ -71,10 +74,12 @@ select {
   font: inherit;
 }
 
+/* Reusable heading font utility for branded display text. */
 .font-heading {
   font-family: 'Merriweather', serif;
 }
 
+/* Feature cards scroll horizontally by duplicating the feature list in React. */
 .feature-carousel-track {
   display: flex;
   width: max-content;
@@ -90,6 +95,7 @@ select {
   width: clamp(16rem, 24vw, 18rem);
 }
 
+/* Move the duplicated carousel list by half its width for a seamless loop. */
 @keyframes feature-carousel-scroll {
   from {
     transform: translateX(0);

@@ -1,3 +1,4 @@
+// Location section with a Google Maps embed for the property address.
 function Location() {
   return (
     <section className="py-15" id="location">

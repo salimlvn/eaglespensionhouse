@@ -1,3 +1,4 @@
+// Public room rates shown on the homepage and guest dashboard.
 export const rates = [
   {
     id: 'non-aircon',

@@ -3,7 +3,9 @@ import phoneIcon from '../../assets/icons/phone-call.png';
 import placeholderIcon from '../../assets/icons/placeholder.png';
 import eagleslogo from '../../assets/images/eaglesnest.jpg';
 
+// Footer with contact details, basic privacy text, and copyright.
 function Footer() {
+  // Keep the copyright year current automatically.
   const currentYear = new Date().getFullYear();
 
   return (

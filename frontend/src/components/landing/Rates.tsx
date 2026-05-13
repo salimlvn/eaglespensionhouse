@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import { rates } from '../../data/rates';
 
+// Tabbed rate display for aircon and non-aircon room prices.
 function Rates() {
+  // Store the active tab id instead of the whole rate object.
   const [activeRateId, setActiveRateId] = useState(rates[0]?.id ?? '');
   const activeRate = rates.find((rate) => rate.id === activeRateId) ?? rates[0];
 

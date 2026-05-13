@@ -9,12 +9,15 @@ type DashboardProps = {
   onLogout: () => void;
 };
 
+// Guest dashboard shown after a successful login.
 function Dashboard({ session, onLogout }: DashboardProps) {
+  // Reuse a small slice of homepage data as temporary dashboard content.
   const featuredRooms = rooms.slice(0, 3);
   const guestFeatures = features.slice(0, 4);
 
   return (
     <main className="min-h-screen bg-[radial-gradient(circle_at_top,#eef7ff_0%,#dbeeff_34%,#f7fbff_72%,#ffffff_100%)] text-slate-900">
+      {/* Header keeps account navigation simple after login. */}
       <header className="border-b border-slate-200/80 bg-white/85 backdrop-blur">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-4 sm:px-6">
           <a href="#/" className="flex min-w-0 items-center gap-3">
@@ -39,6 +42,7 @@ function Dashboard({ session, onLogout }: DashboardProps) {
         </div>
       </header>
 
+      {/* Welcome panel and account summary. */}
       <section className="mx-auto grid max-w-7xl gap-6 px-4 py-8 sm:px-6 lg:grid-cols-[1.3fr_0.7fr] lg:py-12">
         <article className="overflow-hidden rounded-[2rem] bg-[linear-gradient(135deg,#163d73_0%,#2a6bc7_58%,#6fb3ff_100%)] p-8 text-white shadow-[0_30px_80px_rgba(22,61,115,0.28)]">
           <p className="text-sm font-semibold uppercase tracking-[0.3em] text-blue-100">Welcome back</p>
@@ -91,6 +95,7 @@ function Dashboard({ session, onLogout }: DashboardProps) {
         </aside>
       </section>
 
+      {/* Short feature preview from the public homepage. */}
       <section className="mx-auto max-w-7xl px-4 pb-6 sm:px-6">
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
           {guestFeatures.map((feature) => (
@@ -106,6 +111,7 @@ function Dashboard({ session, onLogout }: DashboardProps) {
         </div>
       </section>
 
+      {/* Room preview cards for future booking-related content. */}
       <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
         <div className="flex items-end justify-between gap-4">
           <div>
@@ -136,6 +142,7 @@ function Dashboard({ session, onLogout }: DashboardProps) {
         </div>
       </section>
 
+      {/* Current rate information stays visible inside the guest dashboard. */}
       <section id="rates" className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:pb-14">
         <div className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-[0_24px_60px_rgba(15,23,42,0.08)] sm:p-8">
           <p className="text-sm font-semibold uppercase tracking-[0.24em] text-[#2a6bc7]">Current rates</p>

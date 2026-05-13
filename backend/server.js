@@ -6,8 +6,10 @@ const crypto = require('node:crypto');
 const fs = require('node:fs/promises');
 const path = require('node:path');
 
+// Load backend settings from backend/.env.
 dotenv.config();
 
+// Core Express and storage configuration.
 const app = express();
 const PORT = Number(process.env.PORT || 3001);
 const CORS_ORIGIN = process.env.CORS_ORIGIN || '*';
@@ -16,6 +18,8 @@ const DATA_FILE = path.join(DATA_DIRECTORY, 'users.json');
 const ROOMS_DATA_FILE = path.join(DATA_DIRECTORY, 'rooms.json');
 const SCHEMA_FILE = path.join(__dirname, '..', 'database', 'schema.sql');
 const ENABLE_FILE_STORAGE_FALLBACK = String(process.env.ENABLE_FILE_STORAGE_FALLBACK || 'false').toLowerCase() === 'true';
+
+// Field limits match the frontend validation and SQL schema.
 const USER_FIELD_LIMITS = Object.freeze({
   fullName: 120,
   email: 255,
@@ -26,8 +30,12 @@ const ROOM_FIELD_LIMITS = Object.freeze({
   roomType: 20,
   status: 20,
 });
+
+// Allowed room values used by both SQL and file storage.
 const ROOM_TYPES = Object.freeze(['Aircon', 'Non-aircon']);
 const ROOM_STATUSES = Object.freeze(['Available', 'Maintenance']);
+
+// Fallback room numbers used only when file storage is enabled.
 const ROOM_NUMBER_OPTIONS = Object.freeze([
   '101',
   '102',
@@ -60,12 +68,16 @@ const ROOM_NUMBER_OPTIONS = Object.freeze([
   '214',
   '215',
 ]);
+
+// Shared password rule for signup validation.
 const STRONG_PASSWORD_MESSAGE =
   'Password must be at least 8 characters and include uppercase, lowercase, a number, and a special character.';
 
+// Cache storage/schema initialization so normal requests do not reconnect repeatedly.
 let storagePromise;
 let schemaDefinitionPromise;
 
+// Parse JSON request bodies and allow the configured frontend origin.
 app.use(express.json());
 app.use((req, res, next) => {
   res.setHeader('Access-Control-Allow-Origin', CORS_ORIGIN);
@@ -79,6 +91,7 @@ app.use((req, res, next) => {
   next();
 });
 
+// Health check confirms whether the API can reach its active storage backend.
 app.get('/api/health', async (_, res) => {
   try {
     const storage = await getStorage();
@@ -95,6 +108,7 @@ app.get('/api/health', async (_, res) => {
   }
 });
 
+// Create a new guest account.
 app.post('/api/auth/signup', async (req, res) => {
   try {
     const payload = sanitizeSignupPayload(req.body);
@@ -131,6 +145,7 @@ app.post('/api/auth/signup', async (req, res) => {
   }
 });
 
+// Authenticate an existing guest account.
 app.post('/api/auth/login', async (req, res) => {
   try {
     const payload = sanitizeLoginPayload(req.body);
@@ -157,6 +172,7 @@ app.post('/api/auth/login', async (req, res) => {
   }
 });
 
+// List room inventory records for the admin table.
 app.get('/api/rooms', async (_, res) => {
   try {
     const storage = await getStorage();
@@ -171,6 +187,7 @@ app.get('/api/rooms', async (_, res) => {
   }
 });
 
+// List room numbers available to the admin form.
 app.get('/api/rooms/options', async (_, res) => {
   try {
     const storage = await getStorage();
@@ -185,6 +202,7 @@ app.get('/api/rooms/options', async (_, res) => {
   }
 });
 
+// Create a room after checking the selected number is valid and unused.
 app.post('/api/rooms', async (req, res) => {
   try {
     const payload = sanitizeRoomPayload(req.body);
@@ -214,6 +232,7 @@ app.post('/api/rooms', async (req, res) => {
   }
 });
 
+// Update an existing room after validating the new values.
 app.put('/api/rooms/:roomId', async (req, res) => {
   try {
     const roomId = parseRoomId(req.params.roomId);
@@ -248,6 +267,7 @@ app.put('/api/rooms/:roomId', async (req, res) => {
   }
 });
 
+// Delete a room by id.
 app.delete('/api/rooms/:roomId', async (req, res) => {
   try {
     const roomId = parseRoomId(req.params.roomId);
@@ -264,6 +284,7 @@ app.delete('/api/rooms/:roomId', async (req, res) => {
   }
 });
 
+// Return the initialized storage adapter, resetting the cache on failure.
 async function getStorage() {
   try {
     if (!storagePromise) {
@@ -277,6 +298,7 @@ async function getStorage() {
   }
 }
 
+// Connect to SQL Server, run schema setup, and optionally fall back to JSON files.
 async function initializeStorage() {
   if (!hasDatabaseConfiguration()) {
     throw createRequestError(
@@ -313,18 +335,22 @@ async function initializeStorage() {
   }
 }
 
+// Database configuration is required unless file fallback is deliberately enabled.
 function hasDatabaseConfiguration() {
   return Boolean(process.env.DB_CONNECTION_STRING) || Boolean(process.env.DB_SERVER) || Boolean(process.env.DB_INSTANCE);
 }
 
+// Use the Windows-auth driver when DB_AUTH_MODE is windows.
 function getSqlModule() {
   return usesWindowsAuth() ? sqlWindows : sql;
 }
 
+// Decide whether the app should connect with Windows Authentication.
 function usesWindowsAuth() {
   return String(process.env.DB_AUTH_MODE || 'windows').toLowerCase() === 'windows';
 }
 
+// Build a SQL Server connection config for the requested database.
 function getDatabaseConfig(databaseName = process.env.DB_NAME || 'CapstoneDB') {
   if (process.env.DB_CONNECTION_STRING) {
     return overrideConnectionStringDatabase(process.env.DB_CONNECTION_STRING, databaseName);
@@ -365,6 +391,7 @@ function getDatabaseConfig(databaseName = process.env.DB_NAME || 'CapstoneDB') {
   };
 }
 
+// Build an ODBC connection string for Windows Authentication.
 function buildWindowsConnectionString({ databaseName, encrypt, trustServerCertificate }) {
   const driver = process.env.DB_DRIVER || 'ODBC Driver 17 for SQL Server';
   const serverHost = String(process.env.DB_SERVER || 'localhost').trim();
@@ -382,6 +409,7 @@ function buildWindowsConnectionString({ databaseName, encrypt, trustServerCertif
   ].join(';');
 }
 
+// Choose host, port, or instance-name syntax for SQL Server.
 function resolveSqlServerTarget(serverHost, serverPort, instanceName) {
   if (serverPort) {
     return `${serverHost},${serverPort}`;
@@ -396,9 +424,11 @@ function resolveSqlServerTarget(serverHost, serverPort, instanceName) {
   return instanceName ? `${serverHost}\\${instanceName}` : serverHost;
 }
 
+// SQL Server storage adapter used by the production database flow.
 function createSqlStorage(pool, sqlModule) {
   return {
     label: 'sqlserver',
+    // Find a guest account by normalized email.
     async findUserByEmail(email) {
       const result = await pool
         .request()
@@ -419,6 +449,7 @@ function createSqlStorage(pool, sqlModule) {
 
       return result.recordset[0] || null;
     },
+    // Find a guest account by contact number for duplicate checks.
     async findUserByContactNumber(contactNumber) {
       const result = await pool
         .request()
@@ -439,6 +470,7 @@ function createSqlStorage(pool, sqlModule) {
 
       return result.recordset[0] || null;
     },
+    // Insert a new guest account and return the inserted row.
     async createUser(user) {
       const result = await pool
         .request()
@@ -462,6 +494,7 @@ function createSqlStorage(pool, sqlModule) {
 
       return result.recordset[0];
     },
+    // Load rooms newest-first for the admin inventory.
     async listRooms() {
       const result = await pool.request().query(`
         SELECT
@@ -477,6 +510,7 @@ function createSqlStorage(pool, sqlModule) {
 
       return result.recordset;
     },
+    // Load room number options in display order.
     async listRoomNumberOptions() {
       const result = await pool.request().query(`
         SELECT room_number
@@ -486,6 +520,7 @@ function createSqlStorage(pool, sqlModule) {
 
       return sortRoomNumbers(result.recordset.map((entry) => entry.room_number));
     },
+    // Find a room by number, optionally ignoring the room being edited.
     async findRoomByNumber(roomNumber, excludedRoomId) {
       const request = pool
         .request()
@@ -511,6 +546,7 @@ function createSqlStorage(pool, sqlModule) {
 
       return result.recordset[0] || null;
     },
+    // Insert a room and return the inserted row.
     async createRoom(room) {
       const result = await pool
         .request()
@@ -531,6 +567,7 @@ function createSqlStorage(pool, sqlModule) {
 
       return result.recordset[0];
     },
+    // Update a room and return the updated row.
     async updateRoom(roomId, room) {
       const result = await pool
         .request()
@@ -557,6 +594,7 @@ function createSqlStorage(pool, sqlModule) {
 
       return result.recordset[0] || null;
     },
+    // Delete a room and report whether anything changed.
     async deleteRoom(roomId) {
       const result = await pool
         .request()
@@ -568,17 +606,21 @@ function createSqlStorage(pool, sqlModule) {
   };
 }
 
+// JSON-file storage adapter for local fallback development.
 function createFileStorage() {
   return {
     label: 'file',
+    // Find a guest account by email in users.json.
     async findUserByEmail(email) {
       const users = await readUsersFromFile();
       return users.find((user) => user.email === email) || null;
     },
+    // Find a guest account by contact number in users.json.
     async findUserByContactNumber(contactNumber) {
       const users = await readUsersFromFile();
       return users.find((user) => user.contact_number === contactNumber) || null;
     },
+    // Append a new guest account to users.json.
     async createUser(user) {
       const users = await readUsersFromFile();
       const nextId = users.length === 0 ? 1 : Math.max(...users.map((entry) => entry.user_id)) + 1;
@@ -599,18 +641,22 @@ function createFileStorage() {
 
       return record;
     },
+    // Load rooms from rooms.json newest-first.
     async listRooms() {
       const rooms = await readRoomsFromFile();
       return rooms.sort((left, right) => right.room_id - left.room_id);
     },
+    // Combine default room numbers with any numbers already saved in rooms.json.
     async listRoomNumberOptions() {
       const rooms = await readRoomsFromFile();
       return sortRoomNumbers(Array.from(new Set([...ROOM_NUMBER_OPTIONS, ...rooms.map((room) => room.room_number)])));
     },
+    // Find a room number in rooms.json, optionally ignoring the edited room.
     async findRoomByNumber(roomNumber, excludedRoomId) {
       const rooms = await readRoomsFromFile();
       return rooms.find((room) => room.room_number === roomNumber && room.room_id !== excludedRoomId) || null;
     },
+    // Append a new room to rooms.json.
     async createRoom(room) {
       const rooms = await readRoomsFromFile();
       const nextId = rooms.length === 0 ? 1 : Math.max(...rooms.map((entry) => entry.room_id)) + 1;
@@ -629,6 +675,7 @@ function createFileStorage() {
 
       return record;
     },
+    // Update a room in rooms.json.
     async updateRoom(roomId, room) {
       const rooms = await readRoomsFromFile();
       const roomIndex = rooms.findIndex((entry) => entry.room_id === roomId);
@@ -648,6 +695,7 @@ function createFileStorage() {
       await fs.writeFile(ROOMS_DATA_FILE, JSON.stringify(rooms, null, 2));
       return rooms[roomIndex];
     },
+    // Remove a room from rooms.json.
     async deleteRoom(roomId) {
       const rooms = await readRoomsFromFile();
       const nextRooms = rooms.filter((entry) => entry.room_id !== roomId);
@@ -662,6 +710,7 @@ function createFileStorage() {
   };
 }
 
+// Ensure users.json exists before reading or writing fallback users.
 async function ensureDataFile() {
   await fs.mkdir(DATA_DIRECTORY, { recursive: true });
 
@@ -672,6 +721,7 @@ async function ensureDataFile() {
   }
 }
 
+// Ensure rooms.json exists before reading or writing fallback rooms.
 async function ensureRoomsDataFile() {
   await fs.mkdir(DATA_DIRECTORY, { recursive: true });
 
@@ -682,6 +732,7 @@ async function ensureRoomsDataFile() {
   }
 }
 
+// Read users.json and recover with an empty list if the file is invalid.
 async function readUsersFromFile() {
   await ensureDataFile();
   const raw = await fs.readFile(DATA_FILE, 'utf8');
@@ -694,6 +745,7 @@ async function readUsersFromFile() {
   }
 }
 
+// Read rooms.json and recover with an empty list if the file is invalid.
 async function readRoomsFromFile() {
   await ensureRoomsDataFile();
   const raw = await fs.readFile(ROOMS_DATA_FILE, 'utf8');
@@ -706,6 +758,7 @@ async function readRoomsFromFile() {
   }
 }
 
+// Normalize signup input before validation.
 function sanitizeSignupPayload(payload = {}) {
   return {
     fullName: String(payload.fullName || '').trim(),
@@ -716,6 +769,7 @@ function sanitizeSignupPayload(payload = {}) {
   };
 }
 
+// Normalize login input before validation.
 function sanitizeLoginPayload(payload = {}) {
   return {
     email: normalizeEmail(payload.email),
@@ -723,6 +777,7 @@ function sanitizeLoginPayload(payload = {}) {
   };
 }
 
+// Normalize room input before validation.
 function sanitizeRoomPayload(payload = {}) {
   return {
     roomNumber: String(payload.roomNumber || '').trim(),
@@ -731,6 +786,7 @@ function sanitizeRoomPayload(payload = {}) {
   };
 }
 
+// Validate signup fields before creating a guest account.
 function validateSignupPayload(payload) {
   if (!payload.fullName || !payload.email || !payload.password || !payload.confirmPassword || !payload.contactNumber) {
     throw createRequestError('Please complete all sign-up fields.', 400);
@@ -761,6 +817,7 @@ function validateSignupPayload(payload) {
   }
 }
 
+// Validate login fields before checking credentials.
 function validateLoginPayload(payload) {
   if (!payload.email || !payload.password) {
     throw createRequestError('Email and password are required.', 400);
@@ -775,6 +832,7 @@ function validateLoginPayload(payload) {
   }
 }
 
+// Validate room fields before create or update operations.
 function validateRoomPayload(payload) {
   if (!payload.roomNumber || !payload.roomType || !payload.status) {
     throw createRequestError('Room number, type, and status are required.', 400);
@@ -793,15 +851,18 @@ function validateRoomPayload(payload) {
   }
 }
 
+// Trim and lowercase email addresses for consistent comparisons.
 function normalizeEmail(email) {
   return String(email || '').trim().toLowerCase();
 }
 
+// Match user input to an allowed room type/status regardless of case.
 function normalizeRoomChoice(value, allowedValues) {
   const normalizedValue = String(value || '').trim().toLowerCase();
   return allowedValues.find((allowedValue) => allowedValue.toLowerCase() === normalizedValue) || String(value || '').trim();
 }
 
+// Convert a route parameter into a valid positive integer room id.
 function parseRoomId(value) {
   const roomId = Number(value);
 
@@ -812,6 +873,7 @@ function parseRoomId(value) {
   return roomId;
 }
 
+// Sort numeric room numbers before any non-numeric values.
 function sortRoomNumbers(roomNumbers) {
   return roomNumbers.sort((left, right) => {
     const leftNumber = Number(left);
@@ -835,14 +897,17 @@ function sortRoomNumbers(roomNumbers) {
   });
 }
 
+// Basic email format check for guest auth forms.
 function isValidEmail(email) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 }
 
+// Enforce the required password complexity.
 function isStrongPassword(password) {
   return /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/.test(password);
 }
 
+// Hash a password with a random salt using Node's scrypt.
 function createPasswordHash(password) {
   const salt = crypto.randomBytes(16).toString('hex');
   const derivedKey = crypto.scryptSync(password, salt, 64).toString('hex');
@@ -850,6 +915,7 @@ function createPasswordHash(password) {
   return `${salt}:${derivedKey}`;
 }
 
+// Compare a submitted password with a stored salted hash.
 function verifyPassword(password, storedHash) {
   const [salt, hash] = String(storedHash || '').split(':');
 
@@ -868,10 +934,12 @@ function verifyPassword(password, storedHash) {
   return crypto.timingSafeEqual(storedBuffer, derivedBuffer);
 }
 
+// Create a simple random session token for frontend session state.
 function createSessionToken() {
   return crypto.randomBytes(24).toString('hex');
 }
 
+// Shape a database user row for frontend responses.
 function serializeUser(user) {
   return {
     userId: user.user_id,
@@ -884,6 +952,7 @@ function serializeUser(user) {
   };
 }
 
+// Shape a database room row for frontend responses.
 function serializeRoom(room) {
   return {
     roomId: room.room_id,
@@ -895,24 +964,29 @@ function serializeRoom(room) {
   };
 }
 
+// Attach an HTTP status code to an error.
 function createRequestError(message, statusCode) {
   const error = new Error(message);
   error.statusCode = statusCode;
   return error;
 }
 
+// Escape single quotes for generated SQL string literals.
 function escapeSqlStringLiteral(value) {
   return String(value).replace(/'/g, "''");
 }
 
+// Escape closing brackets for generated SQL identifiers.
 function escapeSqlIdentifier(value) {
   return String(value).replace(/]/g, ']]');
 }
 
+// Escape user-provided values before using them inside a RegExp.
 function escapeRegex(value) {
   return String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
+// Replace the database name in a connection string.
 function overrideConnectionStringDatabase(connectionString, databaseName) {
   const nextDatabaseName = String(databaseName).trim();
 
@@ -931,6 +1005,7 @@ function overrideConnectionStringDatabase(connectionString, databaseName) {
   return `${connectionString.replace(/;?\s*$/, '')};Database=${nextDatabaseName}`;
 }
 
+// Return the parsed schema definition, resetting the cache if parsing fails.
 async function getSchemaDefinition() {
   try {
     if (!schemaDefinitionPromise) {
@@ -944,6 +1019,7 @@ async function getSchemaDefinition() {
   }
 }
 
+// Read schema.sql and split it into setup and application batches.
 async function loadSchemaDefinition() {
   const rawScript = await fs.readFile(SCHEMA_FILE, 'utf8');
 
@@ -966,6 +1042,7 @@ async function loadSchemaDefinition() {
   };
 }
 
+// Read the target database name from the USE statement in schema.sql.
 function parseSchemaDatabaseName(script) {
   const useMatch = script.match(/^\s*USE\s+(?:\[([^\]]+)\]|([A-Za-z0-9_]+))\s*;/im);
   const databaseName = useMatch?.[1] || useMatch?.[2];
@@ -977,6 +1054,7 @@ function parseSchemaDatabaseName(script) {
   return databaseName.trim();
 }
 
+// Swap CapstoneDB in schema.sql for DB_NAME when configured.
 function replaceSchemaDatabaseName(script, currentName, targetName) {
   const currentNamePattern = escapeRegex(currentName);
 
@@ -995,6 +1073,7 @@ function replaceSchemaDatabaseName(script, currentName, targetName) {
     );
 }
 
+// Split SQL Server script batches on standalone GO lines.
 function splitSqlBatches(script) {
   return script
     .split(/^\s*GO\s*$/im)
@@ -1002,16 +1081,19 @@ function splitSqlBatches(script) {
     .filter(Boolean);
 }
 
+// Remove empty batches and any repeated USE batch from execution.
 function normalizeBatches(batches) {
   return batches.filter((batch) => batch && batch.trim() && !/^\s*USE\b/i.test(batch));
 }
 
+// Execute schema batches in order against the provided connection pool.
 async function runSqlBatches(pool, batches) {
   for (const batch of batches) {
     await pool.request().query(batch);
   }
 }
 
+// Convert SQL connection failures into setup guidance for this project.
 function getDatabaseConnectionHelp(error) {
   const baseMessage = getReadableErrorMessage(error);
   const serverTarget = String(process.env.DB_SERVER || '').trim();
@@ -1034,10 +1116,12 @@ function getDatabaseConnectionHelp(error) {
   ].join(' ');
 }
 
+// Extract a readable message from unknown errors.
 function getReadableErrorMessage(error) {
   return error instanceof Error ? error.message : 'Unknown database error.';
 }
 
+// Send expected API errors as JSON and hide unexpected internals.
 function handleApiError(error, res) {
   if (error && typeof error.statusCode === 'number') {
     return res.status(error.statusCode).json({ message: error.message });
@@ -1047,6 +1131,7 @@ function handleApiError(error, res) {
   return res.status(500).json({ message: 'Something went wrong. Please try again.' });
 }
 
+// Start the API only when this file is run directly.
 if (require.main === module) {
   app.listen(PORT, () => {
     console.log(`Auth server running on port ${PORT}`);
