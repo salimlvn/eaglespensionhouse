@@ -168,3 +168,13 @@ BEGIN
     FOREIGN KEY (room_number) REFERENCES dbo.RoomNumberOptions(room_number);
 END
 GO
+
+SELECT * FROM dbo.users;
+SELECT * FROM dbo.RoomNumberOptions;
+SELECT * FROM dbo.Rooms;
+SELECT * FROM dbo.Rooms WHERE status = 'Available';
+SELECT * FROM dbo.Rooms WHERE status = 'Maintenance';
+
+DELETE FROM dbo.Rooms;
+DELETE FROM dbo.users;
+DELETE FROM dbo.RoomNumberOptions;

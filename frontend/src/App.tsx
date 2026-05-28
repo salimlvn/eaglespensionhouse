@@ -2,15 +2,15 @@ import { useEffect, useState } from 'react';
 import Home from './pages/Home';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
-import AdminDashboard from './pages/admin/AdminDashboard';
+import StaffDashboard from './pages/staff/StaffDashboard';
 import Dashboard from './pages/user/Dashboard';
 import { clearStoredSession, getStoredSession, setStoredSession, setSignupSuccessState, type AuthSession, } from './data/auth';
 import {
-  clearStoredAdminSession,
-  getStoredAdminSession,
-  setStoredAdminSession,
-  type AdminSession,
-} from './data/adminAuth';
+  clearStoredStaffSession,
+  getStoredStaffSession,
+  setStoredStaffSession,
+  type StaffSession,
+} from './data/staffAuth';
 
 // Read the current hash route and normalize it to a slash-prefixed path.
 const getCurrentRoute = () => {
@@ -27,7 +27,7 @@ function App() {
   // Keep the active route and both session types in React state.
   const [route, setRoute] = useState(getCurrentRoute);
   const [session, setSession] = useState<AuthSession | null>(() => getStoredSession());
-  const [adminSession, setAdminSession] = useState<AdminSession | null>(() => getStoredAdminSession());
+  const [staffSession, setStaffSession] = useState<StaffSession | null>(() => getStoredStaffSession());
   const routeKey = route.toLowerCase();
 
   // Re-render the app whenever the hash route changes.
@@ -50,11 +50,11 @@ function App() {
     window.location.hash = '/dashboard';
   };
 
-  // Save an admin session and move the admin to the admin area.
-  const handleAdminAuthenticated = (nextSession: AdminSession) => {
-    setStoredAdminSession(nextSession);
-    setAdminSession(nextSession);
-    window.location.hash = '/admin/dashboard';
+  // Save a staff session and move the staff user to the staff area.
+  const handleStaffAuthenticated = (nextSession: StaffSession) => {
+    setStoredStaffSession(nextSession);
+    setStaffSession(nextSession);
+    window.location.hash = '/staff/dashboard';
   };
 
   // Store the successful signup email so the login page can show a message.
@@ -70,24 +70,31 @@ function App() {
     window.location.hash = '/';
   };
 
-  // Clear the admin session and return to the login page.
-  const handleAdminLogout = () => {
-    clearStoredAdminSession();
-    setAdminSession(null);
+  // Clear the staff session and return to the login page.
+  const handleStaffLogout = () => {
+    clearStoredStaffSession();
+    setStaffSession(null);
     window.location.hash = '/login';
   };
 
-  // Route public, admin, and guest pages from the URL hash.
+  // Route public, staff, and guest pages from the URL hash.
   if (routeKey === '/home') {
     return <Home />;
   }
 
-  if (routeKey === '/admin' || routeKey === '/admin/dashboard' || routeKey === '/admin-login') {
-    if (adminSession) {
-      return <AdminDashboard session={adminSession} onLogout={handleAdminLogout} />;
+  if (
+    routeKey === '/staff' ||
+    routeKey === '/staff/dashboard' ||
+    routeKey === '/staff-login' ||
+    routeKey === '/admin' ||
+    routeKey === '/admin/dashboard' ||
+    routeKey === '/admin-login'
+  ) {
+    if (staffSession) {
+      return <StaffDashboard session={staffSession} onLogout={handleStaffLogout} />;
     }
 
-    return <Login onAuthenticated={handleAuthenticated} onAdminAuthenticated={handleAdminAuthenticated} />;
+    return <Login onAuthenticated={handleAuthenticated} onStaffAuthenticated={handleStaffAuthenticated} />;
   }
 
   if (routeKey === '/dashboard') {
@@ -95,7 +102,7 @@ function App() {
       return <Dashboard session={session} onLogout={handleLogout} />;
     }
 
-    return <Login onAuthenticated={handleAuthenticated} onAdminAuthenticated={handleAdminAuthenticated} />;
+    return <Login onAuthenticated={handleAuthenticated} onStaffAuthenticated={handleStaffAuthenticated} />;
   }
 
   if (session && routeKey !== '/login' && routeKey !== '/signup') {
@@ -103,7 +110,7 @@ function App() {
   }
 
   if (routeKey === '/login') {
-    return <Login onAuthenticated={handleAuthenticated} onAdminAuthenticated={handleAdminAuthenticated} />;
+    return <Login onAuthenticated={handleAuthenticated} onStaffAuthenticated={handleStaffAuthenticated} />;
   }
 
   if (routeKey === '/signup') {

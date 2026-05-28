@@ -1,15 +1,15 @@
 import { useState, type ChangeEvent, type FormEvent } from 'react';
 import AuthLayout from '../components/auth/AuthLayout';
 import { AUTH_FIELD_LIMITS, consumeSignupSuccessState, loginUser, type AuthSession } from '../data/auth';
-import { ADMIN_CREDENTIALS, loginAdmin, type AdminSession } from '../data/adminAuth';
+import { isStaffEmail, loginStaff, type StaffSession } from '../data/staffAuth';
 
 type LoginProps = {
   onAuthenticated: (session: AuthSession) => void;
-  onAdminAuthenticated?: (session: AdminSession) => void;
+  onStaffAuthenticated?: (session: StaffSession) => void;
 };
 
-// Login page for both guest users and the temporary static admin account.
-function Login({ onAuthenticated, onAdminAuthenticated }: LoginProps) {
+// Login page for both guest users and the temporary static staff account.
+function Login({ onAuthenticated, onStaffAuthenticated }: LoginProps) {
   // Pull the signup flash message once when the page first loads.
   const [signupState] = useState(() => consumeSignupSuccessState());
   const [form, setForm] = useState({
@@ -29,7 +29,7 @@ function Login({ onAuthenticated, onAdminAuthenticated }: LoginProps) {
     }));
   };
 
-  // Validate, detect admin login, then authenticate against the correct source.
+  // Validate, detect staff login, then authenticate against the correct source.
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
@@ -44,10 +44,10 @@ function Login({ onAuthenticated, onAdminAuthenticated }: LoginProps) {
     }
 
     try {
-      // Admin login is currently local while the full staff/admin module is paused.
-      if (form.email.trim().toLowerCase() === ADMIN_CREDENTIALS.email) {
-        const adminSession = loginAdmin(form);
-        onAdminAuthenticated?.(adminSession);
+      // Staff login is currently local while full staff management is paused.
+      if (isStaffEmail(form.email)) {
+        const staffSession = loginStaff(form);
+        onStaffAuthenticated?.(staffSession);
         return;
       }
 

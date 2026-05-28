@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import logoImage from '../../assets/images/eaglesnest.jpg';
-import type { AdminSession } from '../../data/adminAuth';
+import type { StaffSession } from '../../data/staffAuth';
 import {
   ROOM_STATUSES,
   ROOM_TYPES,
@@ -10,25 +10,25 @@ import {
   getRoomNumberOptions,
   getRooms,
   updateRoom,
-  type AdminRoom,
+  type StaffRoom,
   type RoomPayload,
   type RoomStatus,
   type RoomType,
-} from '../../data/adminRooms';
+} from '../../data/staffRooms';
 
-type AdminDashboardProps = {
-  session: AdminSession;
+type StaffDashboardProps = {
+  session: StaffSession;
   onLogout: () => void;
 };
 
-type AdminPanel = 'add-room' | 'room-inventory';
+type StaffPanel = 'add-room' | 'room-inventory';
 
 type MenuGroup = {
   title: string;
-  panel?: AdminPanel;
+  panel?: StaffPanel;
   items: {
     label: string;
-    panel: AdminPanel;
+    panel: StaffPanel;
   }[];
 };
 
@@ -56,14 +56,14 @@ const menuGroups: MenuGroup[] = [
   },
 ];
 
-// Admin room management screen.
-function AdminDashboard({ session, onLogout }: AdminDashboardProps) {
-  // Track which admin panel is visible.
-  const [activePanel, setActivePanel] = useState<AdminPanel>('room-inventory');
+// Staff room management screen.
+function StaffDashboard({ session, onLogout }: StaffDashboardProps) {
+  // Track which staff panel is visible.
+  const [activePanel, setActivePanel] = useState<StaffPanel>('room-inventory');
   const [openGroups, setOpenGroups] = useState(() => new Set(['Rooms']));
 
   // Room records and form state.
-  const [rooms, setRooms] = useState<AdminRoom[]>([]);
+  const [rooms, setRooms] = useState<StaffRoom[]>([]);
   const [roomNumberOptions, setRoomNumberOptions] = useState<string[]>([]);
   const [roomForm, setRoomForm] = useState<RoomFormState>(emptyRoomForm);
   const [editingRoomId, setEditingRoomId] = useState<number | null>(null);
@@ -107,7 +107,7 @@ function AdminDashboard({ session, onLogout }: AdminDashboardProps) {
     };
   }, []);
 
-  // Display the current date in the admin header.
+  // Display the current date in the staff header.
   const updatedDate = new Intl.DateTimeFormat('en-US', {
     month: 'short',
     day: '2-digit',
@@ -126,17 +126,6 @@ function AdminDashboard({ session, onLogout }: AdminDashboardProps) {
       return validRoomNumbers.has(roomNumber) && (isCurrentEditingRoom || !usedRoomNumbers.has(roomNumber));
     });
   }, [editingRoomId, roomForm.roomType, roomNumberOptions, rooms]);
-
-  // Clear the selected number if the admin switches to a room type where it is invalid.
-  useEffect(() => {
-    if (!roomForm.roomNumber) {
-      return;
-    }
-
-    if (!ROOM_NUMBER_OPTIONS_BY_TYPE[roomForm.roomType].includes(roomForm.roomNumber)) {
-      setRoomForm((form) => ({ ...form, roomNumber: '' }));
-    }
-  }, [roomForm.roomNumber, roomForm.roomType]);
 
   // Open or close sidebar groups, or activate a direct panel link.
   const handleGroupToggle = (group: MenuGroup) => {
@@ -192,7 +181,7 @@ function AdminDashboard({ session, onLogout }: AdminDashboardProps) {
   };
 
   // Move an existing room into the form for editing.
-  const handleEditRoom = (room: AdminRoom) => {
+  const handleEditRoom = (room: StaffRoom) => {
     setRoomForm({
       roomNumber: room.roomNumber,
       roomType: room.roomType,
@@ -205,7 +194,7 @@ function AdminDashboard({ session, onLogout }: AdminDashboardProps) {
   };
 
   // Confirm and remove a room from the backend and local state.
-  const handleDeleteRoom = async (room: AdminRoom) => {
+  const handleDeleteRoom = async (room: StaffRoom) => {
     const confirmed = window.confirm(`Delete room ${room.roomNumber}?`);
 
     if (!confirmed) {
@@ -244,7 +233,7 @@ function AdminDashboard({ session, onLogout }: AdminDashboardProps) {
         {/* Desktop sidebar navigation. */}
         <aside className="fixed inset-y-0 left-0 hidden w-[340px] flex-col bg-[#123754] text-white lg:flex">
           <div className="px-8 py-8">
-            <a href="#/admin/dashboard" className="flex items-center gap-3" onClick={() => setActivePanel('room-inventory')}>
+            <a href="#/staff/dashboard" className="flex items-center gap-3" onClick={() => setActivePanel('room-inventory')}>
               <img
                 src={logoImage}
                 alt="Eagle's Pension House logo"
@@ -252,7 +241,7 @@ function AdminDashboard({ session, onLogout }: AdminDashboardProps) {
               />
               <div>
                 <p className="text-2xl font-bold">Eagle&apos;s Pension</p>
-                <p className="mt-2 text-sm text-blue-100">Admin Control Center</p>
+                <p className="mt-2 text-sm text-blue-100">Staff Control Center</p>
               </div>
             </a>
           </div>
@@ -338,7 +327,7 @@ function AdminDashboard({ session, onLogout }: AdminDashboardProps) {
                 <span className="min-w-0 text-left">
                   <span className="block truncate text-lg font-bold text-[#123754]">Eagle&apos;s Pension</span>
                   <span className="block truncate text-xs uppercase tracking-[0.18em] text-slate-500">
-                    Admin Control Center
+                    Staff Control Center
                   </span>
                 </span>
               </button>
@@ -507,10 +496,10 @@ function AdminDashboard({ session, onLogout }: AdminDashboardProps) {
 }
 
 type RoomInventoryTableProps = {
-  rooms: AdminRoom[];
+  rooms: StaffRoom[];
   isLoading: boolean;
-  onEditRoom: (room: AdminRoom) => void;
-  onDeleteRoom: (room: AdminRoom) => void;
+  onEditRoom: (room: StaffRoom) => void;
+  onDeleteRoom: (room: StaffRoom) => void;
 };
 
 // Table for room inventory, loading state, empty state, and row actions.
@@ -589,4 +578,4 @@ function RoomInventoryTable({ rooms, isLoading, onEditRoom, onDeleteRoom }: Room
   );
 }
 
-export default AdminDashboard;
+export default StaffDashboard;
